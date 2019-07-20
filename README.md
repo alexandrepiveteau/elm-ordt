@@ -17,6 +17,7 @@ The naming conventions, and important parts of this library are inspired by the 
 [Deep Hypertext with Embedded Revision Control Implemented in Regular Expressions](https://dl.acm.org/citation.cfm?id=1832777)
 from Victor Grishchenko.
 
+
 ## What's included ?
 
 For the moment, **not much**. You'll find a basic implementation of an `ORDT.Weft`, which is
@@ -28,6 +29,7 @@ following elements should be included :
   handy when sharing data across sites.
 - (Optional) Some wrappers around `ORDT.Weave` to implement some common replicated data types, like
   sets, sequences or counters.
+
 
 ## Should I contribute ?
 

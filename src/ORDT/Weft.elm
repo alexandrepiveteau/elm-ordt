@@ -17,7 +17,7 @@ both wefts. This ability to find upper or/and a lower bound is often referred to
 [semi-lattice](https://en.wikipedia.org/wiki/Semilattice).
 
 Usually, these clocks are associated with some operations. There is, in general, no guarantee that
-a specific instance of weft is associated to a operation.
+a specific instance of weft is associated to an operation though.
 
 
 # Types

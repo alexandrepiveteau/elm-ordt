@@ -1,53 +1,62 @@
-module ORDT.Weft exposing
+module Ordt.Weft exposing
     ( Weft
-    , empty
-    , getSiteIndex
-    , insertSiteIndex
-    , joinLower
-    , joinUpper
+    , empty, singleton, insert
+    , get, compare
+    , joinLower, joinUpper
+    , encode, decoder
     )
 
-{-| Wefts are like vector clocks - they offer causality information across different events in a
+{-| Wefts are like vector clocks – they offer causality information across different events in a
 distributed system. A new weft is `empty`. Each site is then associated with an index, indicating
 the index of the last operation received for that particular site.
 
 For any two instances of `Weft`, an upper bound as well as a lower bound can be found. The lower
 bound is the last known state to both wefts. The upper bound is the minimal state that could know
-both wefts. This ability to find upper or/and a lower bound is often referred to as a
+both wefts. This ability to find an upper or/and a lower bound is often referred to as a
 [semi-lattice](https://en.wikipedia.org/wiki/Semilattice).
 
 Usually, these clocks are associated with some operations. There is, in general, no guarantee that
 a specific instance of weft is associated to an operation though.
 
+To manage the operation indices for any site, use the `get` and `insert` functions.
 
-# Types
+The site identifiers can be any comparable type. This includes `Int`, `Float`, `Time`, `Char`,
+`String`, and tuples or lists of comparable types.
+
+
+# Wefts
 
 @docs Weft
 
 
-# Primitives
+# Build
 
-@docs empty
+@docs empty, singleton, insert
 
 
-# Contents
+# Query
 
-@docs getSiteIndex
-@docs insertSiteIndex
+@docs get, compare
 
 
 # Semi-lattice
 
-@docs joinLower
-@docs joinUpper
+@docs joinLower, joinUpper
+
+
+# Encoders
+
+@docs encode, decoder
 
 -}
 
 import Dict exposing (Dict)
+import Json.Decode as D
+import Json.Encode as E
 
 
 
--- VECTOR CLOCK
+-- TYPES
 
 
 {-| Represents a weft in a distributed system. So `Weft (Int)` means that each site is identified by
@@ -58,15 +67,16 @@ type Weft comparable
 
 
 
--- CONSTRUCTION
+-- BUILD
 
 
 {-| Create a baseline that will always act as a proper lower bound for all the possible instances
-of an `EchoWeft`.
+of an `Ordt.Weft`.
 
-    joinLower clock empty == empty
+    -- joinLower clock empty == empty
+    -- joinUpper clock empty == clock
 
-    joinUpper clock empty == clock
+
 
 -}
 empty : Weft comparable
@@ -74,22 +84,87 @@ empty =
     Weft_built_in Dict.empty
 
 
+{-| Create a weft that will contain only a single index for a given site.
 
--- SITE INDEX UPDATES
+    -- joinLower (singleton "Alice" 1) empty == empty
+    -- joinUpper (singleton "Alice" 1) empty == singleton "Alice" 1
+
+
+
+-}
+singleton : comparable -> Int -> Weft comparable
+singleton yarn index =
+    Weft_built_in (Dict.singleton yarn index)
+
+
+{-| Set the last operation index for a certain yarn.
+-}
+insert : comparable -> Int -> Weft comparable -> Weft comparable
+insert yarn index (Weft_built_in dict) =
+    Weft_built_in (Dict.insert yarn index dict)
+
+
+
+-- QUERY
 
 
 {-| Get the last operation index for a certain site.
 -}
-getSiteIndex : comparable -> Weft comparable -> Maybe Int
-getSiteIndex site (Weft_built_in dict) =
-    Dict.get site dict
+get : comparable -> Weft comparable -> Maybe Int
+get yarn (Weft_built_in dict) =
+    Dict.get yarn dict
 
 
-{-| Set the last operation index for a certain site.
+{-| Compare any two `Weft` instances. This comparison takes in consideration that two wefts might
+not be comparable, in which case `Order.EQ` will be returned.
+
+
+    alice =
+        insert "Alice 3" empty
+
+    bob =
+        insert "Bob" 2 empty
+
+    -- compare empty alice == Order.LT
+    -- compare empty empty == Order.EQ
+    -- compare alice bob == Order.EQ
+    -- compare bob empty == Order.GT
+
 -}
-insertSiteIndex : comparable -> Int -> Weft comparable -> Weft comparable
-insertSiteIndex site index (Weft_built_in dict) =
-    Weft_built_in (Dict.insert site index dict)
+compare : Weft comparable -> Weft comparable -> Order
+compare (Weft_built_in weave) (Weft_built_in to) =
+    let
+        strictSubset a b =
+            Dict.toList a
+                |> List.map (\( k, v ) -> ( k, v, Dict.get k b ))
+                |> List.filterMap
+                    (\( k, v1, m ) ->
+                        Maybe.map
+                            (\v2 ->
+                                ( v1, v2 )
+                            )
+                            m
+                    )
+                |> List.all (\( v1, v2 ) -> v1 <= v2)
+
+        lhsSmaller =
+            strictSubset weave to
+
+        rhsSmaller =
+            strictSubset to weave
+    in
+    case ( lhsSmaller, rhsSmaller ) of
+        ( True, True ) ->
+            EQ
+
+        ( False, False ) ->
+            EQ
+
+        ( True, False ) ->
+            LT
+
+        ( False, True ) ->
+            GT
 
 
 
@@ -128,3 +203,31 @@ joinUpper (Weft_built_in a) (Weft_built_in b) =
                 Dict.empty
     in
     Weft_built_in dictionary
+
+
+
+-- ENCODERS
+
+
+{-| Turn a `Weft` into a JSON value.
+-}
+encode : (comparable -> E.Value) -> Weft comparable -> E.Value
+encode yarnEncode (Weft_built_in dict) =
+    Dict.toList dict
+        |> List.map (\( yarn, index ) -> ( yarnEncode yarn, E.int index ))
+        |> List.map (\( yarn, index ) -> E.object [ ( "yarn", yarn ), ( "index", index ) ])
+        |> E.list identity
+
+
+{-| Decode a JSON value into a `Weft`.
+-}
+decoder : D.Decoder comparable -> D.Decoder (Weft comparable)
+decoder yarnDecoder =
+    D.list
+        (D.map2
+            Tuple.pair
+            (D.field "yarn" yarnDecoder)
+            (D.field "index" D.int)
+        )
+        |> D.map Dict.fromList
+        |> D.map Weft_built_in

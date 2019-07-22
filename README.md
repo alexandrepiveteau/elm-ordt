@@ -48,6 +48,14 @@ by Victor Grishchenko.
   about, and Bob could also know about something else that Alice does not yet know about, all of
   this at the same time.
 
+## How can I use this library ?
+
+There are a few examples available in the [examples folder](tests/Test/Examples/). Make sure to
+check them out !
+
+There is also the [official documentation](https://package.elm-lang.org/packages/alexandrepiveteau/elm-ordt/latest/)
+available on the **Elm package manager**.
+
 ## Changelog
 
 ### 2.0.0

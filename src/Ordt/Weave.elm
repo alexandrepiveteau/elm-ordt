@@ -45,8 +45,8 @@ The site identifiers can be any comparable type. This includes `Int`, `Float`, `
 
 -}
 
-import AlgebraicGraph.Graph as Graph exposing (Graph)
 import Dict exposing (Dict)
+import Graph exposing (Graph)
 import Json.Decode as D
 import Json.Encode as E
 import Ordt.Weft as Weft exposing (Weft)
@@ -231,8 +231,75 @@ topologicalSort :
             , direct : Weft comparable
             , transitive : Weft comparable
             }
-topologicalSort weave =
-    Debug.todo "Not implemented yet."
+topologicalSort (Weave_built_in dict) =
+    let
+        buildIdentifier y atom =
+            { direct = Weft.toDict atom.direct
+            , transitive = Weft.toDict atom.transitive
+            , position = ( y, atom.index )
+            , operation = atom.operation
+            }
+
+        insertNode node data graph =
+            Graph.insertData node data graph
+
+        insertNodes ids graph =
+            List.foldl
+                (\identifier acc -> insertNode identifier.position identifier acc)
+                graph
+                ids
+
+        insertEdgesForNode identifier =
+            Dict.toList identifier.direct
+                |> List.map (\( y, i ) -> Graph.insertEdge identifier.position ( y, i ))
+
+        insertEdges ids graph =
+            List.concatMap (\identifier -> insertEdgesForNode identifier) ids
+                |> List.foldl identity graph
+
+        identifiers =
+            Dict.toList dict
+                |> List.concatMap
+                    (\( site, values ) ->
+                        List.map (\atom -> buildIdentifier site atom)
+                            values
+                    )
+
+        pool =
+            Graph.empty
+                |> insertNodes identifiers
+                |> insertEdges identifiers
+
+        maybeToList maybe =
+            case maybe of
+                Just element ->
+                    [ element ]
+
+                Nothing ->
+                    []
+
+        sorted =
+            Graph.topologicalSort pool
+                |> maybeToList
+                |> List.concatMap identity
+                |> List.filterMap
+                    (\( y, i ) ->
+                        let
+                            data =
+                                Graph.getData ( y, i ) pool
+
+                            dataToAtom d =
+                                { yarn = y
+                                , index = i
+                                , direct = Weft.fromDict d.direct
+                                , transitive = Weft.fromDict d.transitive
+                                , operation = d.operation
+                                }
+                        in
+                        Maybe.map dataToAtom data
+                    )
+    in
+    sorted
 
 
 {-| Reduce the topologically sorted operations of a weave, starting with the most recent one.
@@ -341,6 +408,16 @@ filterMap isGood (Weave_built_in dicts) =
     Weave_built_in (Dict.map (\_ -> filterMapYarn) dicts)
 
 
+
+-- COMBINE
+
+
+type CombinePosition a
+    = Left a
+    | Right a
+    | Both a a
+
+
 {-| The most general way to combine two weaves. You provide three accumulators for when an
 operation with a given `Weft` gets combined:
 
@@ -358,6 +435,13 @@ merge :
     -> result
     -> result
 merge left both right l r =
+    let
+        topl =
+            topologicalSort l
+
+        topr =
+            topologicalSort r
+    in
     Debug.todo "Not implemented yet."
 
 

@@ -3,7 +3,6 @@ module Ordt.Weave exposing
     , empty, singleton, push
     , isEmpty, size, yarn, weft
     , map, foldl, foldr, filter, filterMap
-    , decoder, encode, merge
     )
 
 {-| Weaves are collections specifically designed to handle wefts and operations. They keep causality
@@ -408,17 +407,15 @@ type CombinePosition a
     | Both a a
 
 
-{-| The most general way to combine two weaves. You provide three accumulators for when an
-operation with a given `Weft` gets combined:
 
-1.  Only in the left `Weave`.
-2.  In both `Weave`.
-3.  Only in the right `Weave`.
-
--}
-
-
-
+-- {-| The most general way to combine two weaves. You provide three accumulators for when an
+-- operation with a given `Weft` gets combined:
+--
+-- 1.  Only in the left `Weave`.
+-- 2.  In both `Weave`.
+-- 3.  Only in the right `Weave`.
+--
+-- -}
 -- merge :
 --     (Weft comparable -> o -> result -> result)
 --     -> (Weft comparable -> o -> o -> result -> result)
@@ -480,23 +477,13 @@ weft (Weave_built_in dict) =
 
 
 -- ENCODERS
-
-
-{-| Turn a `Weave` into a JSON value.
--}
-
-
-
+-- {-| Turn a `Weave` into a JSON value.
+-- -}
 -- encode : (comparable -> E.Value) -> (o -> E.Value) -> Weave comparable o -> E.Value
 -- encode =
 --     Debug.todo "Not implemented yet."
-
-
-{-| Decode a JSON value into a `Weave`.
--}
-
-
-
+-- {-| Decode a JSON value into a `Weave`.
+-- -}
 -- decoder : D.Decoder comparable -> D.Decoder o -> D.Decoder (Weave comparable o)
 -- decoder =
 --     Debug.todo "Not implemented yet."

@@ -5,6 +5,7 @@ import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer, int, list, string)
 import Ordt.Weave as Weave exposing (Weave)
 import Ordt.Weft as Weft exposing (Weft)
+import Set exposing (Set)
 import Test exposing (..)
 import Test.Weft exposing (siteName)
 
@@ -95,16 +96,16 @@ pushWeave =
         [ test "empty with push has size 1" <|
             \_ ->
                 Weave.empty
-                    |> Weave.push "Alice" () Dict.empty
+                    |> Weave.push "Alice" () Set.empty
                     |> Weave.size
                     |> Expect.equal 1
         , test "push 4 times has size 4" <|
             \_ ->
                 Weave.empty
-                    |> Weave.push "Alice" () Dict.empty
-                    |> Weave.push "Bob" () Dict.empty
-                    |> Weave.push "Alice" () Dict.empty
-                    |> Weave.push "Charles" () Dict.empty
+                    |> Weave.push "Alice" () Set.empty
+                    |> Weave.push "Bob" () Set.empty
+                    |> Weave.push "Alice" () Set.empty
+                    |> Weave.push "Charles" () Set.empty
                     |> Weave.size
                     |> Expect.equal 4
         ]

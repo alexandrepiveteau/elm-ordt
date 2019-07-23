@@ -29,9 +29,9 @@ global variable.
 
 -}
 
-import Dict exposing (Dict)
 import Ordt.Weave as Weave exposing (Weave)
 import Ordt.Weft as Weft exposing (Weft)
+import Set exposing (Set)
 
 
 
@@ -64,7 +64,7 @@ integrate : comparable -> CounterOperation -> Counter comparable -> Counter comp
 integrate site operation (Counter_built_in weave) =
     let
         newWeave =
-            Weave.push site operation Dict.empty weave
+            Weave.push site operation Set.empty weave
     in
     Counter_built_in newWeave
 

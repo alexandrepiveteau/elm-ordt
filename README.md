@@ -50,26 +50,28 @@ by Victor Grishchenko.
 
 ## How can I use this library ?
 
-There are a few examples available in the [examples folder](tests/Test/Examples/). Make sure to
-check them out !
+Run `elm install alexandrepiveteau/elm-ordt` in your project and you're good to go !
 
-There is also the [official documentation](https://package.elm-lang.org/packages/alexandrepiveteau/elm-ordt/latest/)
+There are some examples of what the library could be used for available in the [examples folder](tests/Test/Examples/).
+Make sure to check them out :)
+
+I also recommend you to read the [official documentation](https://package.elm-lang.org/packages/alexandrepiveteau/elm-ordt/latest/)
 available on the **Elm package manager**.
 
-## Changelog
+## Release history
 
-### 2.0.0
-
-The namespace has been changed to `Ordt.` to better fit in the Elm ecosystem. There is now a new
-`Ordt.Weave` type for distributed weaves. Some functions have been renamed, and new `decoder`, 
-`encode` and (for wefts only) `compare` utilities have been added.
-
-### 1.0.0
-
-Initial release, with `ORDT.Weft` support.
+* 2.0.0
+    * **Breaking change**: Namespace changed from `ORDT` to `Ordt`.
+    * **Breaking change**: The function `Ordt.Weft.getSiteAtIndex` is simplified to `Ordt.Weft.get`
+        and the function `Ordt.Weft.insertSiteAtIndex` is simplified to `Ordt.Weft.insert`.
+    * **New**: An `Ordt.Weave` data type for history tracking.
+    * **Improvement**: Some `encode` and `decoder` functions for `Ordt.Weft`.
+    * **Improvement**: Some `fromDict` and `toDict` functions for `Ordt.Weft`.
+    * **Improvement**: A `compare` function for `Ordt.Weft`.
+* 1.0.0 – Initial release with basic `ORDT.Weft` support.
 
 ## Should I contribute ?
 
-If you improve performance or fix a bug (or simply find one), sure ! If you want to change the API,
-ideas are welcome, but I tend to be a bit cautious and conservative when it comes to altering APIs
-and can't promise we will include your fancy-does-everything-API right away in this library :)
+Yes ! This package is very new, and its design very experimental. I would love to get some
+feedback on the API design, bug fixes or help improving the overall performance of the data
+structures.

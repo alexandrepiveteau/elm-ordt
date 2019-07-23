@@ -50,6 +50,7 @@ import Dict exposing (Dict)
 import Json.Decode as D
 import Json.Encode as E
 import Ordt.Weft as Weft exposing (Weft)
+import Set exposing (Set)
 
 
 
@@ -60,7 +61,8 @@ type alias Yarn site o =
     List
         { index : Int
         , operation : o
-        , dependencies : Dict site Int
+        , direct : Weft site
+        , transitive : Weft site
         }
 
 
@@ -111,7 +113,11 @@ singleton : comparable -> o -> Weave comparable o
 singleton site operation =
     let
         atom =
-            { index = defaultIndex, operation = operation, dependencies = Dict.empty }
+            { index = defaultIndex
+            , operation = operation
+            , direct = Weft.empty
+            , transitive = Weft.empty
+            }
     in
     Weave_built_in (Dict.singleton site (List.singleton atom))
 
@@ -127,44 +133,59 @@ Internally, some implicit references will be added if necessary, for transitive 
 acknowledgements of the previous operations of this site. If you add at a certain `site`, the index
 for this particular site will use `max(get weft site, nextWeaveIndexFor site)`.
 
+An important note - you can not reference the future in an operation you're adding now. Indeed, this
+could otherwise lead to some pretty severe inconsitencies - what if you reference the future of your
+friend, and he references yours ? You don't have a directed acyclic graph anymore !
+
     type CounterOperation
         = Increment
         | Decrement
 
     ack =
-        Dict.singleton "Alice" Weave.defaultIndex
+        Weft.singleton "Alice" Weave.defaultIndex
 
     weave =
         Weave.empty
-            |> Weave.push "Alice" Increment Dict.empty
-            |> Weave.push "Bob" Decrement Dict.empty
+            |> Weave.push "Alice" Increment Weft.empty
+            |> Weave.push "Bob" Decrement Weft.empty
             |> Weave.push "Charlie" Increment ack
 
 -}
 push :
     comparable
     -> o
-    -> Dict comparable Int
+    -> Set comparable
     -> Weave comparable o
     -> Weave comparable o
 push site op dependencies (Weave_built_in dict) =
     let
-        index =
-            Maybe.map2
-                max
-                (Dict.get site dependencies)
-                (Dict.get site dict
-                    |> Maybe.withDefault []
-                    |> List.head
-                    |> Maybe.map .index
-                    |> Maybe.map ((+) 1)
-                )
+        siteNextIndex =
+            Dict.get site dict
+                |> Maybe.withDefault []
+                |> List.head
+                |> Maybe.map .index
+                |> Maybe.map ((+) 1)
                 |> Maybe.withDefault defaultIndex
 
+        currentWeft =
+            weft (Weave_built_in dict)
+
+        siteWeft =
+            Weft.singleton site siteNextIndex
+
+        -- TODO : Fold over the acknowledged sites + indices here.
+        -- Weft.joinUpper siteWeft acknowledgedWeft
+        directWeft =
+            Debug.todo "Not implemented yet."
+
+        transitiveWeft =
+            Debug.todo "Not implemented yet."
+
         atom =
-            { index = index
+            { index = siteNextIndex
             , operation = op
-            , dependencies = dependencies
+            , direct = directWeft
+            , transitive = transitiveWeft
             }
 
         updatedYarn =
@@ -179,25 +200,6 @@ push site op dependencies (Weave_built_in dict) =
 
 
 
--- EXPLICIT WEAVES
-
-
-{-| A type describing a Weave that contains its own weft information with each operation, explicitly
-encoded.
--}
-type alias ExplicitWeave comparable o =
-    Weave comparable { operation : o, weft : Weft comparable }
-
-
-{-| Constructs an explicit weave from a standard weave. This will be useful for all the transform,
-combine and query functions.
--}
-explicit : Weave comparable o -> ExplicitWeave comparable o
-explicit =
-    Debug.todo "Not implemented yet."
-
-
-
 -- TRANSFORM
 
 
@@ -205,14 +207,14 @@ explicit =
 partial order of the elements.
 -}
 topologicalSort :
-    ExplicitWeave comparable o
+    Weave comparable o
     ->
         List
             { yarn : comparable
             , index : Int
             , operation : o
-            , weft : Weft comparable
-            , dependencies : Dict comparable Int
+            , direct : Weft comparable
+            , transitive : Weft comparable
             }
 topologicalSort weave =
     Debug.todo "Not implemented yet."
@@ -244,9 +246,9 @@ foldl :
 foldl f acc weave =
     let
         reduce element a =
-            f element.weft element.operation a
+            f element.transitive element.operation a
     in
-    explicit weave
+    weave
         |> topologicalSort
         |> List.foldl reduce acc
 
@@ -271,9 +273,9 @@ foldr :
 foldr f acc weave =
     let
         reduce element a =
-            f element.weft element.operation a
+            f element.transitive element.operation a
     in
-    explicit weave
+    weave
         |> topologicalSort
         |> List.foldr reduce acc
 
@@ -281,9 +283,9 @@ foldr f acc weave =
 {-| Map a function onto a weave, creating a weave with transformed operations.
 -}
 map : (Weft comparable -> a -> b) -> Weave comparable a -> Weave comparable b
-map f weave =
+map isGood weave =
     filterMap
-        (\w e -> Just (f w e))
+        (\w e -> Just (isGood w e))
         weave
 
 
@@ -293,15 +295,14 @@ filter :
     (Weft comparable -> o -> Bool)
     -> Weave comparable o
     -> Weave comparable o
-filter f weave =
+filter isGood weave =
     filterMap
         (\w e ->
-            case f w e of
-                True ->
-                    Just e
+            if isGood w e then
+                Just e
 
-                False ->
-                    Nothing
+            else
+                Nothing
         )
         weave
 
@@ -310,30 +311,19 @@ filter f weave =
 illegal operations from the weave.
 -}
 filterMap : (Weft comparable -> a -> Maybe b) -> Weave comparable a -> Weave comparable b
-filterMap f weave =
+filterMap isGood (Weave_built_in dicts) =
     let
-        explicitWeave =
-            explicit weave
+        wrap atom op =
+            { index = atom.index
+            , operation = op
+            , direct = atom.direct
+            , transitive = atom.transitive
+            }
+
+        filterMapYarn =
+            List.filterMap (\atom -> Maybe.map (wrap atom) (isGood atom.transitive atom.operation))
     in
-    case explicitWeave of
-        Weave_built_in dicts ->
-            Weave_built_in
-                (Dict.map
-                    (\_ y ->
-                        List.filterMap
-                            (\atom ->
-                                let
-                                    maybeAtom op =
-                                        { index = atom.index, operation = op, dependencies = atom.dependencies }
-                                in
-                                Maybe.map
-                                    maybeAtom
-                                    (f atom.operation.weft atom.operation.operation)
-                            )
-                            y
-                    )
-                    dicts
-                )
+    Weave_built_in (Dict.map (\_ -> filterMapYarn) dicts)
 
 
 {-| The most general way to combine two weaves. You provide three accumulators for when an
@@ -353,13 +343,6 @@ merge :
     -> result
     -> result
 merge left both right l r =
-    let
-        el =
-            explicit l
-
-        er =
-            explicit r
-    in
     Debug.todo "Not implemented yet."
 
 

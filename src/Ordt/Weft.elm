@@ -3,6 +3,7 @@ module Ordt.Weft exposing
     , empty, singleton, insert
     , get, compare
     , joinLower, joinUpper
+    , fromDict, toDict
     , encode, decoder
     )
 
@@ -42,6 +43,11 @@ The site identifiers can be any comparable type. This includes `Int`, `Float`, `
 # Semi-lattice
 
 @docs joinLower, joinUpper
+
+
+# Dicts
+
+@docs fromDict, toDict
 
 
 # Encoders
@@ -102,6 +108,20 @@ singleton yarn index =
 insert : comparable -> Int -> Weft comparable -> Weft comparable
 insert yarn index (Weft_built_in dict) =
     Weft_built_in (Dict.insert yarn index dict)
+
+
+{-| Turn a weft into a `Dict`.
+-}
+toDict : Weft comparable -> Dict comparable Int
+toDict (Weft_built_in dict) =
+    dict
+
+
+{-| Turn a `Dict` into a weft.
+-}
+fromDict : Dict comparable Int -> Weft comparable
+fromDict dict =
+    Weft_built_in dict
 
 
 

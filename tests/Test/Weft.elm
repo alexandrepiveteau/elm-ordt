@@ -14,6 +14,7 @@ tests =
         [ emptyWeftTests
         , singletonWeftTests
         , encodingTests
+        , equalityTests
         ]
 
 
@@ -75,6 +76,30 @@ singletonWeftTests =
                             _ ->
                                 Nothing
                         )
+        ]
+
+
+
+-- EQUALITY
+
+
+equalityTests : Test
+equalityTests =
+    describe "equality tests"
+        [ test "wefts with different insertion order are equal" <|
+            \_ ->
+                let
+                    left =
+                        Weft.empty
+                            |> Weft.insert "Alice" 1
+                            |> Weft.insert "Bob" 2
+
+                    right =
+                        Weft.empty
+                            |> Weft.insert "Bob" 2
+                            |> Weft.insert "Alice" 1
+                in
+                Expect.equal left right
         ]
 
 

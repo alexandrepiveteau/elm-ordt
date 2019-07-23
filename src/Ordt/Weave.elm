@@ -170,16 +170,31 @@ push site op dependencies (Weave_built_in dict) =
         currentWeft =
             weft (Weave_built_in dict)
 
-        siteWeft =
-            Weft.singleton site siteNextIndex
-
-        -- TODO : Fold over the acknowledged sites + indices here.
-        -- Weft.joinUpper siteWeft acknowledgedWeft
-        directWeft =
-            Debug.todo "Not implemented yet."
-
         transitiveWeft =
-            Debug.todo "Not implemented yet."
+            let
+                known =
+                    dependencies
+                        |> Set.toList
+                        |> List.filterMap (\s -> Maybe.andThen List.head (Dict.get s dict))
+                        |> List.map .transitive
+                        |> List.foldl Weft.joinUpper Weft.empty
+            in
+            if siteNextIndex <= 0 then
+                Weft.remove site known
+
+            else
+                Weft.insert site (siteNextIndex - 1) known
+
+        directWeft =
+            dependencies
+                |> Set.toList
+                |> List.filterMap
+                    (\s ->
+                        Dict.get s dict
+                            |> Maybe.andThen List.head
+                            |> Maybe.map (\a -> ( s, a.index ))
+                    )
+                |> List.foldl (\( s, i ) acc -> Weft.insert s i acc) Weft.empty
 
         atom =
             { index = siteNextIndex

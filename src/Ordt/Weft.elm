@@ -1,6 +1,6 @@
 module Ordt.Weft exposing
     ( Weft
-    , empty, singleton, insert
+    , empty, singleton, insert, remove
     , get, compare
     , joinLower, joinUpper
     , fromDict, toDict
@@ -32,7 +32,7 @@ The site identifiers can be any comparable type. This includes `Int`, `Float`, `
 
 # Build
 
-@docs empty, singleton, insert
+@docs empty, singleton, insert, remove
 
 
 # Query
@@ -108,6 +108,13 @@ singleton yarn index =
 insert : comparable -> Int -> Weft comparable -> Weft comparable
 insert yarn index (Weft_built_in dict) =
     Weft_built_in (Dict.insert yarn index dict)
+
+
+{-| Remove a yarn from a weft. If the key is not found, no changes are made.
+-}
+remove : comparable -> Weft comparable -> Weft comparable
+remove yarn (Weft_built_in dict) =
+    Weft_built_in (Dict.remove yarn dict)
 
 
 {-| Turn a weft into a `Dict`.

@@ -3,8 +3,7 @@ module Ordt.Weave exposing
     , empty, singleton, push
     , isEmpty, size, yarn, weft
     , map, foldl, foldr, filter, filterMap
-    , merge
-    , encode, decoder
+    , decoder, encode, merge
     )
 
 {-| Weaves are collections specifically designed to handle wefts and operations. They keep causality
@@ -33,15 +32,6 @@ The site identifiers can be any comparable type. This includes `Int`, `Float`, `
 # Transform
 
 @docs map, foldl, foldr, filter, filterMap
-
-# Combine
-
-@docs merge
-
-
-# Encoders
-
-@docs encode, decoder
 
 -}
 
@@ -426,26 +416,26 @@ operation with a given `Weft` gets combined:
 3.  Only in the right `Weave`.
 
 -}
-merge :
-    (Weft comparable -> o -> result -> result)
-    -> (Weft comparable -> o -> o -> result -> result)
-    -> (Weft comparable -> o -> result -> result)
-    -> Weave comparable o
-    -> Weave comparable o
-    -> result
-    -> result
-merge left both right l r =
-    let
-        topl =
-            topologicalSort l
-
-        topr =
-            topologicalSort r
-    in
-    Debug.todo "Not implemented yet."
 
 
 
+-- merge :
+--     (Weft comparable -> o -> result -> result)
+--     -> (Weft comparable -> o -> o -> result -> result)
+--     -> (Weft comparable -> o -> result -> result)
+--     -> Weave comparable o
+--     -> Weave comparable o
+--     -> result
+--     -> result
+-- merge left both right l r =
+--     let
+--         topl =
+--             topologicalSort l
+--
+--         topr =
+--             topologicalSort r
+--     in
+--     Debug.todo "Not implemented yet."
 -- QUERY
 
 
@@ -494,13 +484,19 @@ weft (Weave_built_in dict) =
 
 {-| Turn a `Weave` into a JSON value.
 -}
-encode : (comparable -> E.Value) -> (o -> E.Value) -> Weave comparable o -> E.Value
-encode =
-    Debug.todo "Not implemented yet."
+
+
+
+-- encode : (comparable -> E.Value) -> (o -> E.Value) -> Weave comparable o -> E.Value
+-- encode =
+--     Debug.todo "Not implemented yet."
 
 
 {-| Decode a JSON value into a `Weave`.
 -}
-decoder : D.Decoder comparable -> D.Decoder o -> D.Decoder (Weave comparable o)
-decoder =
-    Debug.todo "Not implemented yet."
+
+
+
+-- decoder : D.Decoder comparable -> D.Decoder o -> D.Decoder (Weave comparable o)
+-- decoder =
+--     Debug.todo "Not implemented yet."

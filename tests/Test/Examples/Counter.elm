@@ -48,14 +48,6 @@ type Counter comparable
 
 
 
--- insertInPair : ( a, b ) -> ( Set a, Set b ) -> ( Set a, Set b )
-
-
-insertInPair ( x, y ) ( xs, ys ) =
-    Tuple.pair (Set.insert x xs) (Set.insert y ys)
-
-
-
 -- BUILD
 
 

@@ -3,8 +3,8 @@ module Ordt.Weave exposing
     , empty, singleton, push
     , isEmpty, size, yarn, weft
     , map, foldl, foldr, filter, filterMap
+    , union, merge
     , encode, decoder
-    -- , union, merge
     )
 
 {-| Weaves are collections specifically designed to handle wefts and operations. They keep causality
@@ -33,6 +33,11 @@ The site identifiers can be any comparable type. This includes `Int`, `Float`, `
 # Transform
 
 @docs map, foldl, foldr, filter, filterMap
+
+
+# Combine
+
+@docs union, merge
 
 
 # Encoders
@@ -392,7 +397,7 @@ filter isGood weave =
 illegal operations from the weave.
 -}
 filterMap : (Weft comparable -> a -> Maybe b) -> Weave comparable a -> Weave comparable b
-filterMap isGood (Weave_built_in dicts) =
+filterMap isGood (Weave_built_in dict) =
     let
         wrap atom op =
             { index = atom.index
@@ -404,58 +409,61 @@ filterMap isGood (Weave_built_in dicts) =
         filterMapYarn =
             List.filterMap (\atom -> Maybe.map (wrap atom) (isGood atom.transitive atom.operation))
     in
-    Weave_built_in (Dict.map (\_ -> filterMapYarn) dicts)
+    Weave_built_in (Dict.map (\_ -> filterMapYarn) dict)
 
 
 
 -- COMBINE
---
---
--- type CombinePosition a
---     = Left a
---     | Right a
---     | Both a a
---
---
--- {-| The most general way to combine two weaves. You provide three accumulators for when an
--- operation with a given `Weft` gets combined:
---
--- 1.  Only in the left `Weave`.
--- 2.  In both `Weave`.
--- 3.  Only in the right `Weave`.
---
--- This function has a **different behavior** than `foldl` or `foldr`, because you are provided with
--- the **direct dependencies** of the operations, not their transitive closure !
---
--- -}
--- merge :
---     (Weft comparable -> o -> result -> result)
---     -> (Weft comparable -> o -> o -> result -> result)
---     -> (Weft comparable -> o -> result -> result)
---     -> Weave comparable o
---     -> Weave comparable o
---     -> result
---     -> result
--- merge left both right l r =
---     let
---         topl =
---             topologicalSort l
---
---         topr =
---             topologicalSort r
---     in
---     Debug.todo "Not implemented yet."
---
---
--- {-| Combine two weaves. If there is a collision, the preference is given to the first weave.
--- -}
--- union : Weave comparable o -> Weave comparable o -> Weave comparable o
--- union first second =
---     let
---         s =
---             Debug.todo "Check the order in which the topological sort occurs."
---     in
---     Debug.todo "Not implemented yet."
+
+
+type CombinePosition a
+    = Left a
+    | Right a
+    | Both a a
+
+
+{-| The most general way to combine two weaves. You provide three accumulators for when an
+operation with a given `Weft` gets combined:
+
+1.  Only in the left `Weave`.
+2.  In both `Weave`.
+3.  Only in the right `Weave`.
+
+This function has a **different behavior** than `foldl` or `foldr`, because you are provided with
+the **direct dependencies** of the operations, not their transitive closure !
+
+-}
+merge :
+    (Weft comparable -> o -> result -> result)
+    -> (Weft comparable -> o -> o -> result -> result)
+    -> (Weft comparable -> o -> result -> result)
+    -> Weave comparable o
+    -> Weave comparable o
+    -> result
+    -> result
+merge left both right l r =
+    let
+        topl =
+            topologicalSort l
+
+        topr =
+            topologicalSort r
+    in
+    Debug.todo "Not implemented yet."
+
+
+{-| Combine two weaves. If there is a collision, the preference is given to the first weave.
+-}
+union : Weave comparable o -> Weave comparable o -> Weave comparable o
+union first second =
+    let
+        s =
+            Debug.todo "Check the order in which the topological sort occurs."
+    in
+    Debug.todo "Not implemented yet."
+
+
+
 -- QUERY
 
 
@@ -486,7 +494,7 @@ yarn identifier (Weave_built_in dict) =
 
 {-| Get the weft representing the knowledge that this weave has of the whole distributed system.
 This does not necessarily mean that this weave has access to all the prior operations though, as
-some site-specific garbage collection might have occured.
+some site-specific garbage collection might have occurred.
 -}
 weft : Weave comparable o -> Weft comparable
 weft (Weave_built_in dict) =

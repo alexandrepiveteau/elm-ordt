@@ -1,14 +1,17 @@
 module Test.Examples exposing (tests)
 
 import Expect exposing (Expectation)
+import Set
 import Test exposing (..)
 import Test.Examples.Counter as Counter exposing (Counter)
+import Test.Examples.GSet as GSet exposing (GSet)
 
 
 tests : Test
 tests =
     describe "end-to-end examples tests"
         [ counterTests
+        , setTests
         ]
 
 
@@ -54,4 +57,26 @@ counterTests =
                     |> Counter.increment "Alice"
                     |> Counter.value
                     |> Expect.equal -1
+        ]
+
+
+setTests : Test
+setTests =
+    describe "set tests"
+        [ test "empty set has no elements" <|
+            \_ ->
+                GSet.empty
+                    |> GSet.value
+                    |> Set.size
+                    |> Expect.equal 0
+        , test "single site set adds enough items" <|
+            \_ ->
+                let
+                    set =
+                        GSet.empty
+                            |> GSet.insert "Alice" "Hello"
+                            |> GSet.insert "Alice" "World"
+                            |> GSet.value
+                in
+                Expect.equal 2 (Set.size set)
         ]

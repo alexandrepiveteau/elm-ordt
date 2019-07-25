@@ -3,6 +3,8 @@ module Ordt.Weave exposing
     , empty, singleton, push
     , isEmpty, size, yarn, weft
     , map, foldl, foldr, filter, filterMap
+    , encode, decoder
+    -- , union, merge
     )
 
 {-| Weaves are collections specifically designed to handle wefts and operations. They keep causality
@@ -32,6 +34,11 @@ The site identifiers can be any comparable type. This includes `Int`, `Float`, `
 
 @docs map, foldl, foldr, filter, filterMap
 
+
+# Encoders
+
+@docs encode, decoder
+
 -}
 
 import Dict exposing (Dict)
@@ -46,13 +53,16 @@ import Set exposing (Set)
 -- WEAVES
 
 
+type alias Atom site o =
+    { index : Int
+    , operation : o
+    , direct : Weft site
+    , transitive : Weft site
+    }
+
+
 type alias Yarn site o =
-    List
-        { index : Int
-        , operation : o
-        , direct : Weft site
-        , transitive : Weft site
-        }
+    List (Atom site o)
 
 
 {-| Represents a weave of operations. Each operation has some extra information about knowledge it
@@ -112,7 +122,7 @@ singleton site operation =
 
 
 {-| Append an operation to a certain site, and indicate with a `Dict` the operations that are
-explicitly ackowledged by this push.
+explicitly acknowledged by this push.
 
 **This is not for arbitrary insertions in the past !**
 
@@ -399,21 +409,23 @@ filterMap isGood (Weave_built_in dicts) =
 
 
 -- COMBINE
-
-
-type CombinePosition a
-    = Left a
-    | Right a
-    | Both a a
-
-
-
+--
+--
+-- type CombinePosition a
+--     = Left a
+--     | Right a
+--     | Both a a
+--
+--
 -- {-| The most general way to combine two weaves. You provide three accumulators for when an
 -- operation with a given `Weft` gets combined:
 --
 -- 1.  Only in the left `Weave`.
 -- 2.  In both `Weave`.
 -- 3.  Only in the right `Weave`.
+--
+-- This function has a **different behavior** than `foldl` or `foldr`, because you are provided with
+-- the **direct dependencies** of the operations, not their transitive closure !
 --
 -- -}
 -- merge :
@@ -431,6 +443,17 @@ type CombinePosition a
 --
 --         topr =
 --             topologicalSort r
+--     in
+--     Debug.todo "Not implemented yet."
+--
+--
+-- {-| Combine two weaves. If there is a collision, the preference is given to the first weave.
+-- -}
+-- union : Weave comparable o -> Weave comparable o -> Weave comparable o
+-- union first second =
+--     let
+--         s =
+--             Debug.todo "Check the order in which the topological sort occurs."
 --     in
 --     Debug.todo "Not implemented yet."
 -- QUERY
@@ -477,13 +500,79 @@ weft (Weave_built_in dict) =
 
 
 -- ENCODERS
--- {-| Turn a `Weave` into a JSON value.
--- -}
--- encode : (comparable -> E.Value) -> (o -> E.Value) -> Weave comparable o -> E.Value
--- encode =
---     Debug.todo "Not implemented yet."
--- {-| Decode a JSON value into a `Weave`.
--- -}
--- decoder : D.Decoder comparable -> D.Decoder o -> D.Decoder (Weave comparable o)
--- decoder =
---     Debug.todo "Not implemented yet."
+
+
+{-| Turn a `Weave` into a JSON value.
+-}
+encode : (comparable -> E.Value) -> (o -> E.Value) -> Weave comparable o -> E.Value
+encode siteEncode operationEncode weave =
+    let
+        weftEncode : Weft comparable -> E.Value
+        weftEncode =
+            Weft.encode siteEncode
+
+        atomEncode : Atom comparable o -> E.Value
+        atomEncode atom =
+            E.object
+                [ ( "index", E.int atom.index )
+                , ( "operation", operationEncode atom.operation )
+                , ( "direct", weftEncode atom.direct )
+                , ( "transitive", weftEncode atom.transitive )
+                ]
+
+        yarnEncode : ( comparable, Yarn comparable o ) -> E.Value
+        yarnEncode ( site, y ) =
+            E.object
+                [ ( "site", siteEncode site )
+                , ( "yarn", E.list atomEncode y )
+                ]
+
+        weaveEncode : Weave comparable o -> E.Value
+        weaveEncode (Weave_built_in d) =
+            Dict.toList d
+                |> E.list yarnEncode
+    in
+    weaveEncode weave
+
+
+{-| Decode a JSON value into a `Weave`.
+-}
+decoder : D.Decoder comparable -> D.Decoder o -> D.Decoder (Weave comparable o)
+decoder siteDecoder operationDecoder =
+    let
+        weftDecoder : D.Decoder (Weft comparable)
+        weftDecoder =
+            Weft.decoder siteDecoder
+
+        atomDecoder : D.Decoder (Atom comparable o)
+        atomDecoder =
+            D.map4
+                (\i o d t ->
+                    { index = i
+                    , operation = o
+                    , direct = d
+                    , transitive = t
+                    }
+                )
+                (D.field "index" D.int)
+                (D.field "operation" operationDecoder)
+                (D.field "direct" weftDecoder)
+                (D.field "transitive" weftDecoder)
+
+        yarnDecoder : D.Decoder ( comparable, Yarn comparable o )
+        yarnDecoder =
+            D.map2
+                (\s y -> ( s, y ))
+                (D.field "site" siteDecoder)
+                (D.field "yarn" (D.list atomDecoder))
+
+        weaveDecoder : D.Decoder (Weave comparable o)
+        weaveDecoder =
+            D.map
+                (\v ->
+                    Dict.fromList v
+                        |> Weave_built_in
+                )
+                (D.list yarnDecoder)
+    in
+    weaveDecoder

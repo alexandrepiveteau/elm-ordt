@@ -1,11 +1,12 @@
-module Test.Weft exposing (siteName, tests, weft)
+module Test.Weft exposing (tests)
 
 import Expect exposing (Expectation)
-import Fuzz exposing (Fuzzer, andMap, int, list, map, string)
 import Json.Decode
 import Json.Encode
 import Ordt.Weft as Weft exposing (Weft)
 import Test exposing (..)
+import Test.Fuzz exposing (siteName)
+import Test.Weft.Fuzz
 
 
 tests : Test
@@ -16,27 +17,6 @@ tests =
         , encodingTests
         , equalityTests
         ]
-
-
-
--- FUZZERS
-
-
-siteName : Fuzzer String
-siteName =
-    Fuzz.oneOf
-        [ Fuzz.constant "Alice"
-        , Fuzz.constant "Bob"
-        , Fuzz.constant "Charlie"
-        , Fuzz.constant "David"
-        ]
-
-
-weft : Fuzzer comparable -> Fuzzer (Weft comparable)
-weft yarn =
-    map
-        (List.foldl identity Weft.empty)
-        (list <| andMap int <| map Weft.insert yarn)
 
 
 
@@ -110,7 +90,7 @@ equalityTests =
 encodingTests : Test
 encodingTests =
     describe "encoding"
-        [ fuzz (weft siteName) "round trip" <|
+        [ fuzz (Test.Weft.Fuzz.weft siteName) "round trip" <|
             \fuzzedWeft ->
                 fuzzedWeft
                     |> Weft.encode Json.Encode.string

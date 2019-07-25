@@ -60,6 +60,9 @@ available on the **Elm package manager**.
 
 ## Release history
 
+* 2.1.0
+    * **New**: Combination utilities for `Ordt.Weave`.
+    * **Improvement**: Some `encode` and `decoder` functions for `Ordt.Weave`.
 * 2.0.0
     * **Breaking change**: Namespace changed from `ORDT` to `Ordt`.
     * **Breaking change**: The function `Ordt.Weft.getSiteAtIndex` is simplified to `Ordt.Weft.get`

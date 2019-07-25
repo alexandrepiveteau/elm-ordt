@@ -1,13 +1,14 @@
 module Test.Weave exposing (tests)
 
-import Dict exposing (Dict)
 import Expect exposing (Expectation)
-import Fuzz exposing (Fuzzer, int, list, string)
+import Json.Decode
+import Json.Encode
 import Ordt.Weave as Weave exposing (Weave)
 import Ordt.Weft as Weft exposing (Weft)
 import Set exposing (Set)
 import Test exposing (..)
-import Test.Weft exposing (siteName)
+import Test.Fuzz exposing (operation, siteName)
+import Test.Weave.Fuzz
 
 
 tests : Test
@@ -16,6 +17,7 @@ tests =
         [ emptyWeave
         , singletonWeave
         , pushWeave
+        , encodingTests
         ]
 
 
@@ -108,4 +110,20 @@ pushWeave =
                     |> Weave.push "Charles" () Set.empty
                     |> Weave.size
                     |> Expect.equal 4
+        ]
+
+
+
+-- ENCODERS
+
+
+encodingTests : Test
+encodingTests =
+    describe "encoding"
+        [ fuzz (Test.Weave.Fuzz.weave siteName operation) "round trip" <|
+            \fuzzedWeave ->
+                fuzzedWeave
+                    |> Weave.encode Json.Encode.string Json.Encode.string
+                    |> Json.Decode.decodeValue (Weave.decoder Json.Decode.string Json.Decode.string)
+                    |> Expect.equal (Ok fuzzedWeave)
         ]

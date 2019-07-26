@@ -165,22 +165,6 @@ push site op dependencies (Weave_built_in dict) =
                 |> Maybe.map ((+) 1)
                 |> Maybe.withDefault defaultIndex
 
-        transitiveWeft =
-            let
-                known =
-                    dependencies
-                        |> Set.insert site
-                        |> Set.toList
-                        |> List.filterMap (\s -> Maybe.andThen List.head (Dict.get s dict))
-                        |> List.map .transitive
-                        |> List.foldl Weft.joinUpper Weft.empty
-            in
-            if siteNextIndex <= 0 then
-                Weft.remove site known
-
-            else
-                Weft.insert site (siteNextIndex - 1) known
-
         directWeft =
             dependencies
                 |> Set.toList
@@ -191,6 +175,25 @@ push site op dependencies (Weave_built_in dict) =
                             |> Maybe.map (\a -> ( s, a.index ))
                     )
                 |> List.foldl (\( s, i ) acc -> Weft.insert s i acc) Weft.empty
+
+        transitiveWeft =
+            let
+                known =
+                    dependencies
+                        |> Set.insert site
+                        |> Set.toList
+                        |> List.filterMap (\s -> Maybe.andThen List.head (Dict.get s dict))
+                        |> List.map .transitive
+                        |> List.foldl Weft.joinUpper Weft.empty
+
+                base =
+                    if siteNextIndex <= 0 then
+                        Weft.remove site known
+
+                    else
+                        Weft.insert site (siteNextIndex - 1) known
+            in
+            Weft.joinUpper base directWeft
 
         atom =
             { index = siteNextIndex

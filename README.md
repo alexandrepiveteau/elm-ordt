@@ -60,8 +60,13 @@ available on the **Elm package manager**.
 
 ## Release history
 
-* 2.1.0
+* Upcoming **MAJOR**
+    * (TBA)
+* Upcoming **MINOR**
     * **New**: Combination utilities for `Ordt.Weave`.
+* 2.1.1
+    * **Fix** : `Weave.push` does not do transitive dependencies for the branch to which it is added.
+* 2.1.0
     * **Improvement**: Some `encode` and `decoder` functions for `Ordt.Weave`.
 * 2.0.0
     * **Breaking change**: Namespace changed from `ORDT` to `Ordt`.

@@ -1,9 +1,9 @@
 {
     "type": "package",
     "name": "alexandrepiveteau/elm-ordt",
-    "summary": "ORDTs in Elm.",
+    "summary": "Operational Replicated Data Types for crafting replicated data types",
     "license": "MIT",
-    "version": "2.1.0",
+    "version": "2.0.0",
     "exposed-modules": [
         "Ordt.Weave",
         "Ordt.Weft"

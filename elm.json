@@ -3,7 +3,7 @@
     "name": "alexandrepiveteau/elm-ordt",
     "summary": "Operational Replicated Data Types for crafting replicated data types",
     "license": "MIT",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "exposed-modules": [
         "Ordt.Weave",
         "Ordt.Weft"

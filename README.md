@@ -58,25 +58,6 @@ Make sure to check them out :)
 I also recommend you to read the [official documentation](https://package.elm-lang.org/packages/alexandrepiveteau/elm-ordt/latest/)
 available on the **Elm package manager**.
 
-## Release history
-
-* Upcoming **MAJOR**
-    * (TBA)
-* Upcoming **MINOR**
-    * **New**: Combination utilities for `Ordt.Weave`.
-* 2.1.2
-    * **Fix** : `Weave.push` does not do transitive dependencies for the branch to which it is added.
-* 2.1.0
-    * **Improvement**: Some `encode` and `decoder` functions for `Ordt.Weave`.
-* 2.0.0
-    * **Breaking change**: Namespace changed from `ORDT` to `Ordt`.
-    * **Breaking change**: The function `Ordt.Weft.getSiteAtIndex` is simplified to `Ordt.Weft.get`
-        and the function `Ordt.Weft.insertSiteAtIndex` is simplified to `Ordt.Weft.insert`.
-    * **New**: An `Ordt.Weave` data type for history tracking.
-    * **Improvement**: Some `encode` and `decoder` functions for `Ordt.Weft`.
-    * **Improvement**: Some `fromDict` and `toDict` functions for `Ordt.Weft`.
-    * **Improvement**: A `compare` function for `Ordt.Weft`.
-* 1.0.0 – Initial release with basic `ORDT.Weft` support.
 
 ## Should I contribute ?
 

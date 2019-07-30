@@ -3,6 +3,7 @@ module Ordt.Weave exposing
     , empty, singleton, push
     , isEmpty, size, yarn, weft
     , map, foldl, foldr, filter, filterMap
+    , union, merge
     , encode, decoder
     )
 
@@ -32,6 +33,11 @@ The site identifiers can be any comparable type. This includes `Int`, `Float`, `
 # Transform
 
 @docs map, foldl, foldr, filter, filterMap
+
+
+# Combine
+
+@docs union, merge
 
 
 # Encoders
@@ -409,51 +415,58 @@ filterMap isGood (Weave_built_in dict) =
 
 
 -- COMBINE
--- type CombinePosition a
---     = Left a
---     | Right a
---     | Both a a
---
---
--- {-| The most general way to combine two weaves. You provide three accumulators for when an
--- operation with a given `Weft` gets combined:
---
--- 1.  Only in the left `Weave`.
--- 2.  In both `Weave`.
--- 3.  Only in the right `Weave`.
---
--- This function has a **different behavior** than `foldl` or `foldr`, because you are provided with
--- the **direct dependencies** of the operations, not their transitive closure !
---
--- -}
--- merge :
---     (Weft comparable -> o -> result -> result)
---     -> (Weft comparable -> o -> o -> result -> result)
---     -> (Weft comparable -> o -> result -> result)
---     -> Weave comparable o
---     -> Weave comparable o
---     -> result
---     -> result
--- merge left both right l r =
---     let
---         topl =
---             topologicalSort l
---
---         topr =
---             topologicalSort r
---     in
---     Debug.todo "Not implemented yet."
---
---
--- {-| Combine two weaves. If there is a collision, the preference is given to the first weave.
--- -}
--- union : Weave comparable o -> Weave comparable o -> Weave comparable o
--- union first second =
---     let
---         s =
---             Debug.todo "Check the order in which the topological sort occurs."
---     in
---     Debug.todo "Not implemented yet."
+
+
+type CombinePosition a
+    = Left a
+    | Right a
+    | Both a a
+
+
+{-| The most general way to combine two weaves. You provide three accumulators for when an
+operation with a given `Weft` gets combined:
+
+1.  Only in the left `Weave`.
+2.  In both `Weave`.
+3.  Only in the right `Weave`.
+
+This function has a **different behavior** than `foldl` or `foldr`, because you are provided with
+the **direct dependencies** of the operations, not their transitive closure !
+
+-}
+merge :
+    (Weft comparable -> ( comparable, o ) -> result -> result)
+    -> (Weft comparable -> ( comparable, o ) -> ( comparable, o ) -> result -> result)
+    -> (Weft comparable -> ( comparable, o ) -> result -> result)
+    -> Weave comparable o
+    -> Weave comparable o
+    -> result
+    -> result
+merge left both right l r =
+    let
+        topl =
+            topologicalSort l
+
+        topr =
+            topologicalSort r
+    in
+    Debug.todo "Not implemented yet."
+
+
+{-| Combine two weaves. If there is a collision, the preference is given to the first weave.
+-}
+union : Weave comparable o -> Weave comparable o -> Weave comparable o
+union first second =
+    let
+        -- We consider that we have received the operations in topological order, so we can simply construct the weft
+        -- manually by inserting elements at in the right yarn.
+        s =
+            Debug.todo ""
+    in
+    Debug.todo "Not implemented yet."
+
+
+
 -- QUERY
 
 
@@ -500,6 +513,36 @@ weft (Weave_built_in dict) =
 -- ENCODERS
 
 
+keyIndex : String
+keyIndex =
+    "i"
+
+
+keyOperation : String
+keyOperation =
+    "o"
+
+
+keyDirect : String
+keyDirect =
+    "d"
+
+
+keyTransitive : String
+keyTransitive =
+    "t"
+
+
+keySite : String
+keySite =
+    "s"
+
+
+keyYarn : String
+keyYarn =
+    "y"
+
+
 {-| Turn a `Weave` into a JSON value.
 -}
 encode : (comparable -> E.Value) -> (o -> E.Value) -> Weave comparable o -> E.Value
@@ -512,17 +555,17 @@ encode siteEncode operationEncode weave =
         atomEncode : Atom comparable o -> E.Value
         atomEncode atom =
             E.object
-                [ ( "index", E.int atom.index )
-                , ( "operation", operationEncode atom.operation )
-                , ( "direct", weftEncode atom.direct )
-                , ( "transitive", weftEncode atom.transitive )
+                [ ( keyIndex, E.int atom.index )
+                , ( keyOperation, operationEncode atom.operation )
+                , ( keyDirect, weftEncode atom.direct )
+                , ( keyTransitive, weftEncode atom.transitive )
                 ]
 
         yarnEncode : ( comparable, Yarn comparable o ) -> E.Value
         yarnEncode ( site, y ) =
             E.object
-                [ ( "site", siteEncode site )
-                , ( "yarn", E.list atomEncode y )
+                [ ( keySite, siteEncode site )
+                , ( keyYarn, E.list atomEncode y )
                 ]
 
         weaveEncode : Weave comparable o -> E.Value
@@ -552,17 +595,17 @@ decoder siteDecoder operationDecoder =
                     , transitive = t
                     }
                 )
-                (D.field "index" D.int)
-                (D.field "operation" operationDecoder)
-                (D.field "direct" weftDecoder)
-                (D.field "transitive" weftDecoder)
+                (D.field keyIndex D.int)
+                (D.field keyOperation operationDecoder)
+                (D.field keyDirect weftDecoder)
+                (D.field keyTransitive weftDecoder)
 
         yarnDecoder : D.Decoder ( comparable, Yarn comparable o )
         yarnDecoder =
             D.map2
                 (\s y -> ( s, y ))
-                (D.field "site" siteDecoder)
-                (D.field "yarn" (D.list atomDecoder))
+                (D.field keySite siteDecoder)
+                (D.field keyYarn (D.list atomDecoder))
 
         weaveDecoder : D.Decoder (Weave comparable o)
         weaveDecoder =

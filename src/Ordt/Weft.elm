@@ -59,6 +59,7 @@ The site identifiers can be any comparable type. This includes `Int`, `Float`, `
 import Dict exposing (Dict)
 import Json.Decode as D
 import Json.Encode as E
+import Set exposing (Set)
 
 
 
@@ -163,9 +164,9 @@ compare (Weft_built_in weave) (Weft_built_in to) =
     let
         strictSubset a b =
             Dict.toList a
-                |> List.map (\( k, v ) -> ( k, v, Dict.get k b ))
+                |> List.map (\( k, v ) -> ( v, Dict.get k b ))
                 |> List.filterMap
-                    (\( k, v1, m ) ->
+                    (\( v1, m ) ->
                         Maybe.map
                             (\v2 ->
                                 ( v1, v2 )
@@ -236,14 +237,59 @@ joinUpper (Weft_built_in a) (Weft_built_in b) =
 -- ENCODERS
 
 
+keyIndex : String
+keyIndex =
+    "i"
+
+
+keyYarn : String
+keyYarn =
+    "y"
+
+
 {-| Turn a `Weft` into a JSON value.
 -}
 encode : (comparable -> E.Value) -> Weft comparable -> E.Value
 encode yarnEncode (Weft_built_in dict) =
     Dict.toList dict
         |> List.map (\( yarn, index ) -> ( yarnEncode yarn, E.int index ))
-        |> List.map (\( yarn, index ) -> E.object [ ( "yarn", yarn ), ( "index", index ) ])
+        |> List.map (\( yarn, index ) -> E.object [ ( keyYarn, yarn ), ( keyIndex, index ) ])
         |> E.list identity
+
+
+{-| A new encoding scheme that indexes data differently. This takes a bit less space than the previous encoding, while
+also completely removing the Json arbitrary identifiers for index and yarn.
+
+TODO : Determine if we should switch to this new encoding scheme or not.
+
+-}
+newEncode : (comparable -> E.Value) -> Weft comparable -> E.Value
+newEncode yarnEncode (Weft_built_in dict) =
+    let
+        byIndex : Dict Int (Set comparable)
+        byIndex =
+            Dict.foldl
+                (\site index ->
+                    Dict.update
+                        index
+                        (\set ->
+                            Maybe.map (Set.insert site) set
+                                |> Maybe.withDefault (Set.singleton site)
+                                |> Just
+                        )
+                )
+                Dict.empty
+                dict
+    in
+    E.dict
+        String.fromInt
+        (\sites -> E.set yarnEncode sites)
+        byIndex
+
+
+newDecoder : D.Decoder comparable -> D.Decoder (Weft comparable)
+newDecoder yarnDecoder =
+    Debug.todo "Not implemented yet."
 
 
 {-| Decode a JSON value into a `Weft`.
@@ -253,8 +299,8 @@ decoder yarnDecoder =
     D.list
         (D.map2
             Tuple.pair
-            (D.field "yarn" yarnDecoder)
-            (D.field "index" D.int)
+            (D.field keyYarn yarnDecoder)
+            (D.field keyIndex D.int)
         )
         |> D.map Dict.fromList
         |> D.map Weft_built_in

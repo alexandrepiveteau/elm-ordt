@@ -3,10 +3,11 @@
 ## Upcoming
 
 * **Minor**
-    * **New** Combination utilities for `Ordt.Weave`.
-    * **New** More granular insertions for `Ordt.Weave` than with `push`.
-    * **Patch** More efficient implementation of `Ordt.Weave`.
-    * **Patch** Index-based Json encoding and decoding for `Ordt.Weft`.
+    * Combination utilities for `Ordt.Weave`.
+    * More granular insertions for `Ordt.Weave` than with `push`.
+* **Patch**
+    * More efficient implementation of `Ordt.Weave`.
+    * Index-based Json encoding and decoding for `Ordt.Weft`.
     
 ## Released
 

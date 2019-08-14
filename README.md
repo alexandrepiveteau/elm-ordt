@@ -1,5 +1,7 @@
 # Operational Replicated Data Types for Elm
 
+![Elm package](https://img.shields.io/elm-package/v/alexandrepiveteau/elm-ordt)
+
 Systems are asynchronous and distributed. Data and computations must be designed in a way that
 allows them to be replicated, and converge even if events are concurrent.
 

@@ -21,7 +21,7 @@ The naming conventions, and important parts of this library are inspired by the 
 from Victor Grishchenko.
 
 
-## What's included ?
+## What's included ?
 
 You'll find **two primary data structures** in this library. An `Ordt.Weft` is there to let you 
 represent a current timestamp in a distributed system. It contains information about **what you know 
